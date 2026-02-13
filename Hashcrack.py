@@ -6,6 +6,7 @@ import sys
 import time
 from pathlib import Path
 from colorama import Fore, init
+import itertools
 
 init(autoreset=True)
 
@@ -27,57 +28,98 @@ def warning_prompt():
     if input("Continue? [y/n]: ").lower() != "y":
         sys.exit()
 
+# ===== EXTRA GENERATORS =====
+
+def interleave_numbers(word):
+    results = set()
+    nums = "1234567890"
+
+    combo = ""
+    for i, ch in enumerate(word):
+        combo += ch
+        if i < len(nums):
+            combo += nums[i]
+    results.add(combo)
+
+    return results
+
+
+def random_case_variants(word, limit=200):
+    results = set()
+    combos = itertools.product(*[(c.lower(), c.upper()) for c in word])
+
+    for i, combo in enumerate(combos):
+        if i > limit:
+            break
+        results.add("".join(combo))
+
+    return results
+
+
+def insert_symbol_number(word):
+    results = set()
+    symbols = ["#", "@", "!", "$"]
+
+    for i in range(len(word)):
+        for sym in symbols:
+            for n in ["1","12","123","1234"]:
+                results.add(word[:i] + sym + word[i:] + n)
+
+    return results
+
+
 # ===== MUTATIONS =====
 def generate_mutations(word):
     variations = set()
-    base = word.strip()
 
-    variations.add(base)
-    variations.add(base.lower())
-    variations.add(base.upper())
-    variations.add(base.capitalize())
+    numbers = ["1","12","123","1234","885","000","133","12345"]
+    symbols = ["#", "@", "!", "$"]
 
-    # case mix per letter
-    for i in range(len(base)):
-        variations.add(base[:i] + base[i].upper() + base[i+1:])
-        variations.add(base[:i] + base[i].lower() + base[i+1:])
+    # base forms
+    base_forms = {
+        word,
+        word.lower(),
+        word.upper(),
+        word.capitalize(),
+        word.swapcase(),
+    }
 
-    nums = ["123","1234","12345","123456"]
+    # mixed case variants
+    mixed_variants = set()
+    for combo in itertools.product(*[(c.lower(), c.upper()) for c in word]):
+        mixed_variants.add("".join(combo))
+        if len(mixed_variants) > 200:  # limit
+            break
 
-    for v in list(variations):
-        for n in nums:
-            variations.add(v+n)
+    base_forms.update(mixed_variants)
 
-    # leet
-    leet = base.replace("a","@").replace("i","1").replace("o","0")
-    variations.add(leet+"123456")
+    for base in base_forms:
+        variations.add(base)
+
+        # numbers at end
+        for n in numbers:
+            variations.add(base + n)
+
+        # symbol anywhere + numbers
+        for sym in symbols:
+            for i in range(1, len(base)):
+                mid = base[:i] + sym + base[i:]
+                variations.add(mid)
+
+                for n in numbers:
+                    variations.add(mid + n)
+
+    # interleave
+    nums = "1234567890"
+    combo = ""
+    for i, ch in enumerate(word):
+        combo += ch
+        if i < len(nums):
+            combo += nums[i]
+    variations.add(combo)
 
     return variations
 
-
-    variations.add(base)
-    variations.add(base.lower())
-    variations.add(base.upper())
-    variations.add(base.capitalize())
-    variations.add(base.swapcase())
-
-    nums = ["123","1234","12345","123456","2024","2025","2026"]
-
-    for v in list(variations):
-        for n in nums:
-            variations.add(v+n)
-
-    # leet
-    leet = base.replace("a","@").replace("i","1").replace("o","0")
-    variations.add(leet)
-    variations.add(leet+"123")
-    variations.add(leet+"123456")
-
-    # symbols
-    variations.add(base+"!")
-    variations.add(base+"@")
-
-    return variations
 
 # ===== HASH =====
 def make_hash(text, algo):
