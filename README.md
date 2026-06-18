@@ -29,7 +29,7 @@ Do NOT use it for illegal activities.
 Clone the repo:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/HashCrackBG.git
+git clone https://github.com/Lu4katA777/HashCrackBG.git
 cd HashCrackBG
 ```
 
